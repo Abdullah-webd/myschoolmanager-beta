@@ -1,11 +1,12 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import Sidebar from '@/components/Sidebar';
-import { 
-  BarChart3, 
-  Search, 
+import { useState, useEffect } from "react";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import Sidebar from "@/components/Sidebar";
+import SchoolSubscriptionGuard from "@/components/SchoolSubscriptionGuard";
+import {
+  BarChart3,
+  Search,
   FileText,
   Users,
   TrendingUp,
@@ -13,15 +14,43 @@ import {
   Eye,
   Calendar,
   Award,
-  Target
-} from 'lucide-react';
+  Target,
+} from "lucide-react";
 
 export default function TeacherReports() {
   const [exams, setExams] = useState([]);
   const [selectedExam, setSelectedExam] = useState(null);
   const [submissions, setSubmissions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [formData, setFormData] = useState({
+    studentName: "",
+    studentEmail: "",
+    examScore: "",
+    caScore: "",
+    totalScore: "",
+  });
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async () => {
+    try {
+      const res = await fetch("http://localhost:3001/api/grades", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      if (!res.ok) throw new Error("Failed to send result");
+      alert("Result sent successfully ✅");
+      setShowModal(false);
+    } catch (err) {
+      alert(err.message);
+    }
+  };
 
   useEffect(() => {
     fetchExams();
@@ -29,9 +58,9 @@ export default function TeacherReports() {
 
   const fetchExams = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/api/exams', {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:3001/api/exams", {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (response.ok) {
@@ -39,7 +68,7 @@ export default function TeacherReports() {
         setExams(data);
       }
     } catch (error) {
-      console.error('Error fetching exams:', error);
+      console.error("Error fetching exams:", error);
     } finally {
       setIsLoading(false);
     }
@@ -47,17 +76,20 @@ export default function TeacherReports() {
 
   const fetchExamSubmissions = async (examId) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:3001/api/exams/${examId}/submissions`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `http://localhost:3001/api/exams/${examId}/submissions`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
         setSubmissions(data);
       }
     } catch (error) {
-      console.error('Error fetching submissions:', error);
+      console.error("Error fetching submissions:", error);
     }
   };
 
@@ -69,13 +101,21 @@ export default function TeacherReports() {
   const calculateStats = () => {
     if (!submissions.length) return null;
 
-    const scores = submissions.map(sub => sub.percentage || 0);
-    const average = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+    const scores = submissions.map((sub) => sub.percentage || 0);
+    const average =
+      scores.reduce((sum, score) => sum + score, 0) / scores.length;
     const highest = Math.max(...scores);
     const lowest = Math.min(...scores);
-    const passRate = scores.filter(score => score >= 60).length / scores.length * 100;
+    const passRate =
+      (scores.filter((score) => score >= 60).length / scores.length) * 100;
 
-    return { average, highest, lowest, passRate, totalSubmissions: submissions.length };
+    return {
+      average,
+      highest,
+      lowest,
+      passRate,
+      totalSubmissions: submissions.length,
+    };
   };
 
   const printReport = () => {
@@ -106,8 +146,14 @@ export default function TeacherReports() {
           <div class="header">
             <h1>Exam Report</h1>
             <h2>${selectedExam.title}</h2>
-            <p>Subject: ${selectedExam.subject} | Class: ${selectedExam.class}</p>
-            <p>Date: ${new Date(selectedExam.startDate).toLocaleDateString()} | Total Marks: ${selectedExam.totalMarks}</p>
+            <p>Subject: ${selectedExam.subject} | Class: ${
+      selectedExam.class
+    }</p>
+            <p>Date: ${new Date(
+              selectedExam.startDate
+            ).toLocaleDateString()} | Total Marks: ${
+      selectedExam.totalMarks
+    }</p>
           </div>
           
           <div class="stats">
@@ -141,27 +187,40 @@ export default function TeacherReports() {
               </tr>
             </thead>
             <tbody>
-              ${submissions.map(submission => {
-                const percentage = submission.percentage || 0;
-                let grade = 'F';
-                let gradeClass = 'grade-f';
-                
-                if (percentage >= 90) { grade = 'A'; gradeClass = 'grade-a'; }
-                else if (percentage >= 80) { grade = 'B'; gradeClass = 'grade-b'; }
-                else if (percentage >= 70) { grade = 'C'; gradeClass = 'grade-c'; }
-                else if (percentage >= 60) { grade = 'D'; gradeClass = 'grade-c'; }
+              ${submissions
+                .map((submission) => {
+                  const percentage = submission.percentage || 0;
+                  let grade = "F";
+                  let gradeClass = "grade-f";
 
-                return `
+                  if (percentage >= 90) {
+                    grade = "A";
+                    gradeClass = "grade-a";
+                  } else if (percentage >= 80) {
+                    grade = "B";
+                    gradeClass = "grade-b";
+                  } else if (percentage >= 70) {
+                    grade = "C";
+                    gradeClass = "grade-c";
+                  } else if (percentage >= 60) {
+                    grade = "D";
+                    gradeClass = "grade-c";
+                  }
+
+                  return `
                   <tr>
-                    <td>${submission.student.firstName} ${submission.student.lastName}</td>
-                    <td>${submission.student.studentId || 'N/A'}</td>
+                    <td>${submission.student.firstName} ${
+                    submission.student.lastName
+                  }</td>
+                    <td>${submission.student.studentId || "N/A"}</td>
                     <td>${submission.totalScore}/${selectedExam.totalMarks}</td>
                     <td>${percentage.toFixed(1)}%</td>
                     <td class="${gradeClass}">${grade}</td>
                     <td>${submission.status}</td>
                   </tr>
                 `;
-              }).join('')}
+                })
+                .join("")}
             </tbody>
           </table>
 
@@ -172,15 +231,16 @@ export default function TeacherReports() {
       </html>
     `;
 
-    const printWindow = window.open('', '_blank');
+    const printWindow = window.open("", "_blank");
     printWindow.document.write(printContent);
     printWindow.document.close();
     printWindow.print();
   };
 
-  const filteredExams = exams.filter(exam =>
-    exam.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    exam.subject.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredExams = exams.filter(
+    (exam) =>
+      exam.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      exam.subject.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (isLoading) {
@@ -194,268 +254,408 @@ export default function TeacherReports() {
   }
 
   return (
-    <ProtectedRoute allowedRoles={['teacher']}>
-      {(user) => (
-        <div className="min-h-screen bg-gray-50 flex">
-          <Sidebar user={user} />
-          
-          <div className="flex-1 flex flex-col lg:ml-0">
-            <main className="flex-1 p-6 lg:p-8">
-              {!selectedExam ? (
-                <>
-                  {/* Header */}
-                  <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Exam Reports</h1>
-                    <p className="text-gray-600">View detailed reports and analytics for your exams</p>
-                  </div>
+    <SchoolSubscriptionGuard>
+      <ProtectedRoute allowedRoles={["teacher"]}>
+        {(user) => (
+          <div className="min-h-screen bg-gray-50 flex h-screen">
+            <Sidebar user={user} />
 
-                  {/* Search */}
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-                    <div className="relative">
-                      <Search className="w-5 h-5 text-gray-400 absolute left-3 top-3" />
-                      <input
-                        type="text"
-                        placeholder="Search exams..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      />
+            <div className="flex-1 flex flex-col lg:ml-0 overflow-y-auto">
+              <main className="flex-1 p-6 lg:p-8">
+                {!selectedExam ? (
+                  <>
+                    {/* Header */}
+                    <div className="mb-8">
+                      <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                        Exam Reports
+                      </h1>
+                      <p className="text-gray-600">
+                        View detailed reports and analytics for your exams
+                      </p>
                     </div>
-                  </div>
 
-                  {/* Exams List */}
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-                    <div className="p-6 border-b border-gray-200">
-                      <h2 className="text-lg font-semibold text-gray-900">Your Exams</h2>
+                    {/* Search */}
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+                      <div className="relative">
+                        <Search className="w-5 h-5 text-gray-400 absolute left-3 top-3" />
+                        <input
+                          type="text"
+                          placeholder="Search exams..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        />
+                      </div>
                     </div>
-                    <div className="divide-y divide-gray-200">
-                      {filteredExams.map((exam) => (
-                        <div key={exam._id} className="p-6 hover:bg-gray-50 transition-colors">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                                <BarChart3 className="w-6 h-6 text-green-600" />
-                              </div>
-                              <div>
-                                <h3 className="text-lg font-semibold text-gray-900">{exam.title}</h3>
-                                <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
-                                  <span>{exam.subject}</span>
-                                  <span>•</span>
-                                  <span>{exam.class}</span>
-                                  <span>•</span>
-                                  <span>{exam.questions.length} questions</span>
-                                  <span>•</span>
-                                  <span>{exam.totalMarks} marks</span>
+
+                    {/* Exams List */}
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+                      <div className="p-6 border-b border-gray-200">
+                        <h2 className="text-lg font-semibold text-gray-900">
+                          Your Exams
+                        </h2>
+                      </div>
+                      <div className="divide-y divide-gray-200">
+                        {filteredExams.map((exam) => (
+                          <div
+                            key={exam._id}
+                            className="p-6 hover:bg-gray-50 transition-colors"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                  <BarChart3 className="w-6 h-6 text-green-600" />
                                 </div>
-                                <div className="flex items-center gap-2 mt-2">
-                                  <Calendar className="w-4 h-4 text-gray-400" />
-                                  <span className="text-sm text-gray-500">
-                                    {new Date(exam.startDate).toLocaleDateString()}
-                                  </span>
+                                <div>
+                                  <h3 className="text-lg font-semibold text-gray-900">
+                                    {exam.title}
+                                  </h3>
+                                  <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
+                                    <span>{exam.subject}</span>
+                                    <span>•</span>
+                                    <span>{exam.class}</span>
+                                    <span>•</span>
+                                    <span>
+                                      {exam.questions.length} questions
+                                    </span>
+                                    <span>•</span>
+                                    <span>{exam.totalMarks} marks</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-2">
+                                    <Calendar className="w-4 h-4 text-gray-400" />
+                                    <span className="text-sm text-gray-500">
+                                      {new Date(
+                                        exam.startDate
+                                      ).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => handleViewReport(exam)}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                              >
+                                <Eye className="w-4 h-4" />
+                                View Report
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {filteredExams.length === 0 && (
+                        <div className="text-center py-12">
+                          <BarChart3 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                          <h3 className="text-lg font-medium text-gray-900 mb-2">
+                            No exams found
+                          </h3>
+                          <p className="text-gray-600">
+                            {searchTerm
+                              ? "Try adjusting your search criteria"
+                              : "Create your first exam to see reports"}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  /* Report View */
+                  <div>
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-8">
+                      <div>
+                        <button
+                          onClick={() => setSelectedExam(null)}
+                          className="text-green-600 hover:text-green-700 mb-2"
+                        >
+                          ← Back to Exams
+                        </button>
+                        <h1 className="text-3xl font-bold text-gray-900">
+                          {selectedExam.title}
+                        </h1>
+                        <p className="text-gray-600">
+                          {selectedExam.subject} • {selectedExam.class}
+                        </p>
+                      </div>
+                      <button
+                        onClick={printReport}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+                      >
+                        <Download className="w-4 h-4" />
+                        Print Report
+                      </button>
+                    </div>
+
+                    {submissions.length > 0 ? (
+                      <>
+                        {/* Statistics Cards */}
+                        {(() => {
+                          const stats = calculateStats();
+                          return (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <Users className="w-6 h-6 text-blue-600" />
+                                  </div>
+                                  <div>
+                                    <p className="text-2xl font-bold text-gray-900">
+                                      {stats.totalSubmissions}
+                                    </p>
+                                    <p className="text-sm text-gray-600">
+                                      Total Submissions
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                    <TrendingUp className="w-6 h-6 text-green-600" />
+                                  </div>
+                                  <div>
+                                    <p className="text-2xl font-bold text-gray-900">
+                                      {stats.average.toFixed(1)}%
+                                    </p>
+                                    <p className="text-sm text-gray-600">
+                                      Average Score
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                                    <Award className="w-6 h-6 text-yellow-600" />
+                                  </div>
+                                  <div>
+                                    <p className="text-2xl font-bold text-gray-900">
+                                      {stats.highest.toFixed(1)}%
+                                    </p>
+                                    <p className="text-sm text-gray-600">
+                                      Highest Score
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                                    <Target className="w-6 h-6 text-purple-600" />
+                                  </div>
+                                  <div>
+                                    <p className="text-2xl font-bold text-gray-900">
+                                      {stats.passRate.toFixed(1)}%
+                                    </p>
+                                    <p className="text-sm text-gray-600">
+                                      Pass Rate
+                                    </p>
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                            <button
-                              onClick={() => handleViewReport(exam)}
-                              className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                            >
-                              <Eye className="w-4 h-4" />
-                              View Report
-                            </button>
+                          );
+                        })()}
+
+                        {/* Submissions Table */}
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+                          <div className="p-6 border-b border-gray-200">
+                            <h2 className="text-lg font-semibold text-gray-900">
+                              Student Results
+                            </h2>
+                          </div>
+                          <div className="overflow-x-auto">
+                            <table className="w-full">
+                              <thead className="bg-gray-50">
+                                <tr>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Student
+                                  </th>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Score
+                                  </th>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Percentage
+                                  </th>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Grade
+                                  </th>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Status
+                                  </th>
+                                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Submitted
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody className="bg-white divide-y divide-gray-200">
+                                {submissions.map((submission) => {
+                                  const percentage = submission.percentage || 0;
+                                  let grade = "F";
+                                  let gradeColor = "text-red-600";
+
+                                  if (percentage >= 90) {
+                                    grade = "A";
+                                    gradeColor = "text-green-600";
+                                  } else if (percentage >= 80) {
+                                    grade = "B";
+                                    gradeColor = "text-blue-600";
+                                  } else if (percentage >= 70) {
+                                    grade = "C";
+                                    gradeColor = "text-yellow-600";
+                                  } else if (percentage >= 60) {
+                                    grade = "D";
+                                    gradeColor = "text-orange-600";
+                                  }
+
+                                  return (
+                                    <tr
+                                      key={submission._id}
+                                      className="hover:bg-gray-50"
+                                    >
+                                      <td className="px-6 py-4 whitespace-nowrap">
+                                        <div>
+                                          <div className="text-sm font-medium text-gray-900">
+                                            {submission.student.firstName}{" "}
+                                            {submission.student.lastName}
+                                          </div>
+                                          <div className="text-sm text-gray-500">
+                                            ID:{" "}
+                                            {submission.student.studentId ||
+                                              "N/A"}
+                                          </div>
+                                        </div>
+                                      </td>
+                                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {submission.totalScore}/
+                                        {selectedExam.totalMarks}
+                                      </td>
+                                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {percentage.toFixed(1)}%
+                                      </td>
+                                      <td className="px-6 py-4 whitespace-nowrap">
+                                        <span
+                                          className={`text-sm font-bold ${gradeColor}`}
+                                        >
+                                          {grade}
+                                        </span>
+                                      </td>
+                                      <td className="px-6 py-4 whitespace-nowrap">
+                                        <span
+                                          className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                            submission.status === "graded"
+                                              ? "bg-green-100 text-green-800"
+                                              : "bg-yellow-100 text-yellow-800"
+                                          }`}
+                                        >
+                                          {submission.status}
+                                        </span>
+                                      </td>
+                                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        
+
+                                        <button
+                                          onClick={() => setShowModal(true)}
+                                          className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+                                        >
+                                          Send Result
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
                           </div>
                         </div>
-                      ))}
-                    </div>
-
-                    {filteredExams.length === 0 && (
+                      </>
+                    ) : (
                       <div className="text-center py-12">
-                        <BarChart3 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">No exams found</h3>
+                        <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                          No submissions yet
+                        </h3>
                         <p className="text-gray-600">
-                          {searchTerm ? 'Try adjusting your search criteria' : 'Create your first exam to see reports'}
+                          Students haven't taken this exam yet.
                         </p>
                       </div>
                     )}
                   </div>
-                </>
-              ) : (
-                /* Report View */
-                <div>
-                  {/* Header */}
-                  <div className="flex items-center justify-between mb-8">
-                    <div>
-                      <button
-                        onClick={() => setSelectedExam(null)}
-                        className="text-green-600 hover:text-green-700 mb-2"
-                      >
-                        ← Back to Exams
-                      </button>
-                      <h1 className="text-3xl font-bold text-gray-900">{selectedExam.title}</h1>
-                      <p className="text-gray-600">{selectedExam.subject} • {selectedExam.class}</p>
-                    </div>
+                )}
+              </main>
+            </div>
+            {/* Modal */}
+            {showModal && (
+              <div className="fixed inset-0 flex items-center justify-center bg-black/50">
+                <div className="bg-white p-6 rounded-xl w-[400px]">
+                  <h3 className="text-lg font-semibold mb-4">
+                    Send Student Result
+                  </h3>
+
+                  <input
+                    type="text"
+                    name="studentName"
+                    placeholder="Student Name"
+                    className="w-full border p-2 rounded mb-2"
+                    value={formData.studentName}
+                    onChange={handleChange}
+                  />
+                  <input
+                    type="email"
+                    name="studentEmail"
+                    placeholder="Student Email"
+                    className="w-full border p-2 rounded mb-2"
+                    value={formData.studentEmail}
+                    onChange={handleChange}
+                  />
+                  <input
+                    type="number"
+                    name="examScore"
+                    placeholder="Exam Score"
+                    className="w-full border p-2 rounded mb-2"
+                    value={formData.examScore}
+                    onChange={handleChange}
+                  />
+                  <input
+                    type="number"
+                    name="caScore"
+                    placeholder="CA Score"
+                    className="w-full border p-2 rounded mb-2"
+                    value={formData.caScore}
+                    onChange={handleChange}
+                  />
+                  <input
+                    type="number"
+                    name="totalScore"
+                    placeholder="Total Score"
+                    className="w-full border p-2 rounded mb-4"
+                    value={formData.totalScore}
+                    onChange={handleChange}
+                  />
+
+                  <div className="flex justify-end gap-2">
                     <button
-                      onClick={printReport}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+                      onClick={() => setShowModal(false)}
+                      className="px-4 py-2 bg-gray-300 rounded"
                     >
-                      <Download className="w-4 h-4" />
-                      Print Report
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSubmit}
+                      className="px-4 py-2 bg-green-600 text-white rounded"
+                    >
+                      Send
                     </button>
                   </div>
-
-                  {submissions.length > 0 ? (
-                    <>
-                      {/* Statistics Cards */}
-                      {(() => {
-                        const stats = calculateStats();
-                        return (
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                              <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                                  <Users className="w-6 h-6 text-blue-600" />
-                                </div>
-                                <div>
-                                  <p className="text-2xl font-bold text-gray-900">{stats.totalSubmissions}</p>
-                                  <p className="text-sm text-gray-600">Total Submissions</p>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                              <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                                  <TrendingUp className="w-6 h-6 text-green-600" />
-                                </div>
-                                <div>
-                                  <p className="text-2xl font-bold text-gray-900">{stats.average.toFixed(1)}%</p>
-                                  <p className="text-sm text-gray-600">Average Score</p>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                              <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-                                  <Award className="w-6 h-6 text-yellow-600" />
-                                </div>
-                                <div>
-                                  <p className="text-2xl font-bold text-gray-900">{stats.highest.toFixed(1)}%</p>
-                                  <p className="text-sm text-gray-600">Highest Score</p>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                              <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                                  <Target className="w-6 h-6 text-purple-600" />
-                                </div>
-                                <div>
-                                  <p className="text-2xl font-bold text-gray-900">{stats.passRate.toFixed(1)}%</p>
-                                  <p className="text-sm text-gray-600">Pass Rate</p>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })()}
-
-                      {/* Submissions Table */}
-                      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-                        <div className="p-6 border-b border-gray-200">
-                          <h2 className="text-lg font-semibold text-gray-900">Student Results</h2>
-                        </div>
-                        <div className="overflow-x-auto">
-                          <table className="w-full">
-                            <thead className="bg-gray-50">
-                              <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                  Student
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                  Score
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                  Percentage
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                  Grade
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                  Status
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                  Submitted
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                              {submissions.map((submission) => {
-                                const percentage = submission.percentage || 0;
-                                let grade = 'F';
-                                let gradeColor = 'text-red-600';
-                                
-                                if (percentage >= 90) { grade = 'A'; gradeColor = 'text-green-600'; }
-                                else if (percentage >= 80) { grade = 'B'; gradeColor = 'text-blue-600'; }
-                                else if (percentage >= 70) { grade = 'C'; gradeColor = 'text-yellow-600'; }
-                                else if (percentage >= 60) { grade = 'D'; gradeColor = 'text-orange-600'; }
-
-                                return (
-                                  <tr key={submission._id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                      <div>
-                                        <div className="text-sm font-medium text-gray-900">
-                                          {submission.student.firstName} {submission.student.lastName}
-                                        </div>
-                                        <div className="text-sm text-gray-500">
-                                          ID: {submission.student.studentId || 'N/A'}
-                                        </div>
-                                      </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                      {submission.totalScore}/{selectedExam.totalMarks}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                      {percentage.toFixed(1)}%
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                      <span className={`text-sm font-bold ${gradeColor}`}>
-                                        {grade}
-                                      </span>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                                        submission.status === 'graded' 
-                                          ? 'bg-green-100 text-green-800' 
-                                          : 'bg-yellow-100 text-yellow-800'
-                                      }`}>
-                                        {submission.status}
-                                      </span>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                      {new Date(submission.submittedAt).toLocaleDateString()}
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-center py-12">
-                      <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No submissions yet</h3>
-                      <p className="text-gray-600">Students haven't taken this exam yet.</p>
-                    </div>
-                  )}
                 </div>
-              )}
-            </main>
+              </div>
+            )}
           </div>
-        </div>
-      )}
-    </ProtectedRoute>
+        )}
+      </ProtectedRoute>
+    </SchoolSubscriptionGuard>
   );
 }

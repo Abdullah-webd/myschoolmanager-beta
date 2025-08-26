@@ -1,5 +1,6 @@
 const express = require('express');
 const User = require('../models/User');
+const mongoose =  require("mongoose");
 const { auth, requireRole } = require('../middleware/auth');
 const { generateSecurePassword } = require('../utils/passwordGenerator');
 const { sendWelcomeEmail } = require('../utils/emailService');
@@ -7,31 +8,39 @@ const { sendWelcomeEmail } = require('../utils/emailService');
 const router = express.Router();
 
 // Get all users (Admin only)
-router.get('/', auth, requireRole(['admin']), async (req, res) => {
+router.get("/", auth, requireRole(["admin"]), async (req, res) => {
   try {
     const { role, search } = req.query;
-    let query = { schoolId: req.user._id }; // 👈 only users under this admin
 
+    // ✅ Users are linked to the admin's _id via their schoolId
+    let query = { schoolId: req.user._id };
 
-    if (role && role !== 'all') {
+    if (role && role !== "all") {
       query.role = role;
     }
 
     if (search) {
       query.$or = [
-        { firstName: { $regex: search, $options: 'i' } },
-        { lastName: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } }
+        { firstName: { $regex: search, $options: "i" } },
+        { lastName: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
       ];
     }
 
-    const users = await User.find(query).select('-password').sort({ createdAt: -1 });
+    console.log("Final query:", query);
+
+    const users = await User.find(query)
+      .select("-password")
+      .sort({ createdAt: -1 });
+
+    console.log("Fetched users:", users);
     res.json(users);
   } catch (error) {
-    console.error('Get users error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Get users error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 });
+
 
 // Get students in teacher's class
 router.get('/my-students', auth, requireRole(['teacher']), async (req, res) => {

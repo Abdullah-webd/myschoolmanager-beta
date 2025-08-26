@@ -19,6 +19,8 @@ router.post('/signup', async (req, res) => {
       confirmPassword
     } = req.body;
 
+    console.log('Signup request body:', req.body);
+
     // Validate input
     if (!schoolName || !adminName || !email || !phone || !address || !password) {
       return res.status(400).json({ message: 'All fields are required' });
@@ -106,6 +108,7 @@ router.post('/signup', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
 
 
 module.exports = router;

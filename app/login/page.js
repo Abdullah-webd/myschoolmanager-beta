@@ -1,76 +1,81 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Eye, EyeOff, GraduationCap, AlertCircle } from 'lucide-react';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Eye, EyeOff, GraduationCap, AlertCircle } from "lucide-react";
 
 export default function Login() {
   const [formData, setFormData] = useState({
-    email: '',
-    password: ''
+    email: "",
+    password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const router = useRouter();
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
-    setError('');
+    setError("");
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setIsLoading(true);
-  setError('');
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
 
-  try {
-    const response = await fetch('http://localhost:3001/api/auth/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(formData)
-    });
+    try {
+      const response = await fetch("http://localhost:3001/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (response.ok) {
-      // ✅ Store token
-      console.log('Login successful:', data);
-      localStorage.setItem('token', data.token);
+      if (response.ok) {
+        // ✅ Store token
+        console.log("Login successful:", data);
+        localStorage.setItem("token", data.token);
 
-      // ✅ Store user
-      localStorage.setItem('user', JSON.stringify(data.user));
+        // ✅ Store user
+        localStorage.setItem("user", JSON.stringify(data.user));
 
-      // ✅ Store subscription separately for quick access
-      if (data.user.subscription && data.user.subscription.isActive) {
-        localStorage.setItem(
-          'subscription',
-          JSON.stringify(data.user.subscription)
-        );
-      }
+        // ✅ Store adminId if present
+        if (data.user.adminId) {
+          console.log("Storing adminId:", data.user.adminId);
+          localStorage.setItem("adminId", data.user.adminId);
+        }
 
-      // Redirect based on first login status
-      if (data.user.isFirstLogin) {
-        router.push('/change-password');
+        // ✅ Store subscription separately for quick access
+        if (data.user.subscription && data.user.subscription.isActive) {
+          localStorage.setItem(
+            "subscription",
+            JSON.stringify(data.user.subscription)
+          );
+        }
+
+        // Redirect based on first login status
+        if (data.user.isFirstLogin) {
+          router.push("/change-password");
+        } else {
+          router.push(`/dashboard/${data.user.role}`);
+        }
       } else {
-        router.push(`/dashboard/${data.user.role}`);
+        setError(data.message || "Login failed");
       }
-    } else {
-      setError(data.message || 'Login failed');
+    } catch (error) {
+      setError("Network error. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
-  } catch (error) {
-    setError('Network error. Please try again.');
-  } finally {
-    setIsLoading(false);
-  }
-};
-
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -79,8 +84,12 @@ const handleSubmit = async (e) => {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 rounded-full mb-4">
             <GraduationCap className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome Back</h1>
-          <p className="text-gray-600">Sign in to your School Management account</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            Welcome Back
+          </h1>
+          <p className="text-gray-600">
+            Sign in to your School Management account
+          </p>
         </div>
 
         {error && (
@@ -92,7 +101,10 @@ const handleSubmit = async (e) => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Email Address
             </label>
             <input
@@ -108,12 +120,15 @@ const handleSubmit = async (e) => {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Password
             </label>
             <div className="relative">
               <input
-                type={showPassword ? 'text' : 'password'}
+                type={showPassword ? "text" : "password"}
                 id="password"
                 name="password"
                 value={formData.password}
@@ -127,7 +142,11 @@ const handleSubmit = async (e) => {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-gray-600"
               >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                {showPassword ? (
+                  <EyeOff className="w-5 h-5" />
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
               </button>
             </div>
           </div>
@@ -139,7 +158,10 @@ const handleSubmit = async (e) => {
                 type="checkbox"
                 className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
               />
-              <label htmlFor="remember" className="ml-2 block text-sm text-gray-700">
+              <label
+                htmlFor="remember"
+                className="ml-2 block text-sm text-gray-700"
+              >
                 Remember me
               </label>
             </div>
@@ -156,14 +178,17 @@ const handleSubmit = async (e) => {
             disabled={isLoading}
             className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {isLoading ? 'Signing in...' : 'Sign In'}
+            {isLoading ? "Signing in..." : "Sign In"}
           </button>
         </form>
 
         <div className="mt-8 text-center">
           <p className="text-sm text-gray-600">
-            Don't have a school account?{' '}
-            <Link href="/signup" className="text-indigo-600 font-medium hover:text-indigo-500">
+            Don't have a school account?{" "}
+            <Link
+              href="/signup"
+              className="text-indigo-600 font-medium hover:text-indigo-500"
+            >
               Register your school
             </Link>
           </p>

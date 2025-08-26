@@ -11,8 +11,7 @@ const userSchema = new mongoose.Schema({
   },
   schoolId: {
   type: mongoose.Schema.Types.ObjectId,
-  ref: 'User', // or a School model if you have one
-  required: true
+  ref: 'User',
 },
 
   password: {

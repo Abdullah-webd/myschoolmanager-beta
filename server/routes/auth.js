@@ -68,7 +68,8 @@ router.post('/login', async (req, res) => {
         class: user.class,
         classAssigned: user.classAssigned,
         subject: user.subject,
-        subscription // ✅ now included
+        subscription, // ✅ now included
+        adminId: user.schoolId // <-- include adminId for students/teachers
       }
     });
   } catch (error) {

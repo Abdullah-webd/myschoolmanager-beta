@@ -20,6 +20,7 @@ router.get('/', auth, async (req, res) => {
       // Check if exam portal is enabled
       const portalSetting = await Settings.findOne({ key: 'exam_portal_enabled' });
       if (!portalSetting || !portalSetting.value) {
+        console.log('Exam portal is disabled');
         return res.status(403).json({ message: 'Exam portal is currently closed' });
       }
       
@@ -65,6 +66,7 @@ router.get('/:id', auth, async (req, res) => {
   try {
     const exam = await Exam.findById(req.params.id)
       .populate('teacher', 'firstName lastName');
+      console.log('step 1')
 
     if (!exam) {
       return res.status(404).json({ message: 'Exam not found' });
@@ -73,7 +75,9 @@ router.get('/:id', auth, async (req, res) => {
     // Check permissions
     if (req.user.role === 'student') {
       if (exam.class !== req.user.class || !exam.isActive) {
+        console.log('Access denied for exam:', exam.class, req.user.class, exam.isActive);
         return res.status(403).json({ message: 'Access denied' });
+        
       }
       
       // Check if exam portal is enabled
@@ -210,18 +214,22 @@ router.post('/:id/submit', auth, requireRole(['student']), async (req, res) => {
 
     // Auto-grade multiple choice questions
     const gradedAnswers = answers.map(answer => {
-      const question = exam.questions.id(answer.questionId);
-      console.log('Grading answer for question:', question);
-      if (question && question.type === 'multiple-choice') {
-        const isCorrect = answer.answer === question.correctAnswer;
-        return {
-          ...answer,
-          isCorrect,
-          pointsEarned: isCorrect ? question.points : 0
-        };
-      }
-      return answer;
-    });
+  const question = exam.questions.id(answer.questionId);
+  if (question && question.type === "multiple-choice") {
+    // convert index -> actual option
+    const chosenAnswer = question.options[answer.answer]; 
+    const isCorrect = String(chosenAnswer) === String(question.correctAnswer);
+
+    return {
+      ...answer,
+      chosenAnswer, // keep for clarity
+      isCorrect,
+      pointsEarned: isCorrect ? question.points : 0,
+    };
+  }
+  return answer;
+});
+
 
     // Create or update submission
     const submission = await ExamSubmission.findOneAndUpdate(
@@ -267,8 +275,9 @@ router.post('/:id/submit', auth, requireRole(['student']), async (req, res) => {
   }
 });
 
+
 // Get exam submissions (Teachers and Admins)
-router.get('/:id/submissions', auth, requireRole(['teacher', 'admin']), async (req, res) => {
+router.get('/:id/submissions', auth, requireRole(['teacher', 'admin','student']), async (req, res) => {
   try {
     const examId = req.params.id;
     

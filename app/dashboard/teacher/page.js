@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Sidebar from '@/components/Sidebar';
+import SchoolSubscriptionGuard from '@/components/SchoolSubscriptionGuard';
 import { 
   Users, 
   FileText, 
@@ -194,179 +195,225 @@ export default function TeacherDashboard() {
   }
 
   return (
-    <ProtectedRoute allowedRoles={['teacher']}>
-      {(user) => (
-        <div className="min-h-screen bg-gray-50 flex">
-          <Sidebar user={user} />
-          
-          <div className="flex-1 flex flex-col lg:ml-0">
-            <main className="flex-1 p-6 lg:p-8">
-              {/* Header */}
-              <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                  Welcome back, {user.firstName}!
-                </h1>
-                <p className="text-gray-600">
-                  Here's an overview of your teaching activities and student performance.
-                </p>
-              </div>
+    <SchoolSubscriptionGuard>
+      <ProtectedRoute allowedRoles={["teacher"]}>
+        {(user) => (
+          <div className="min-h-screen bg-gray-50 flex">
+            <Sidebar user={user} />
 
-              {/* Stats Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                {statCards.map((stat, index) => (
-                  <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                        <p className="text-3xl font-bold text-gray-900 mt-1">{stat.value}</p>
-                        <p className={`text-sm mt-1 ${
-                          stat.changeType === 'positive' ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {stat.change}
-                        </p>
-                      </div>
-                      <div className={`w-12 h-12 ${stat.color} rounded-lg flex items-center justify-center`}>
-                        <stat.icon className="w-6 h-6 text-white" />
+            <div className="flex-1 flex flex-col lg:ml-0">
+              <main className="flex-1 p-6 lg:p-8">
+                {/* Header */}
+                <div className="mb-8">
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                    Welcome back, {user.firstName}!
+                  </h1>
+                  <p className="text-gray-600">
+                    Here's an overview of your teaching activities and student
+                    performance.
+                  </p>
+                </div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                  {statCards.map((stat, index) => (
+                    <div
+                      key={index}
+                      className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">
+                            {stat.title}
+                          </p>
+                          <p className="text-3xl font-bold text-gray-900 mt-1">
+                            {stat.value}
+                          </p>
+                          <p
+                            className={`text-sm mt-1 ${
+                              stat.changeType === "positive"
+                                ? "text-green-600"
+                                : "text-red-600"
+                            }`}
+                          >
+                            {stat.change}
+                          </p>
+                        </div>
+                        <div
+                          className={`w-12 h-12 ${stat.color} rounded-lg flex items-center justify-center`}
+                        >
+                          <stat.icon className="w-6 h-6 text-white" />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
 
-              {/* Charts Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                {/* Exam Performance Chart */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                {/* Charts Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                  {/* Exam Performance Chart */}
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div className="flex items-center gap-3 mb-6">
+                      <BarChart3 className="w-6 h-6 text-green-500" />
+                      <h2 className="text-lg font-semibold text-gray-900">
+                        Exam Performance
+                      </h2>
+                    </div>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={chartData.examPerformance}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="average" fill="#10b981" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* Subject Distribution */}
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div className="flex items-center gap-3 mb-6">
+                      <PieChart className="w-6 h-6 text-blue-500" />
+                      <h2 className="text-lg font-semibold text-gray-900">
+                        Subject Distribution
+                      </h2>
+                    </div>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <RechartsPieChart>
+                        <PieChart
+                          data={chartData.subjectDistribution}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={80}
+                          dataKey="value"
+                        >
+                          {chartData.subjectDistribution.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </PieChart>
+                        <Tooltip />
+                      </RechartsPieChart>
+                    </ResponsiveContainer>
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      {chartData.subjectDistribution.map((item, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: item.color }}
+                          ></div>
+                          <span className="text-sm text-gray-600">
+                            {item.name}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Monthly Activity Chart */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
                   <div className="flex items-center gap-3 mb-6">
-                    <BarChart3 className="w-6 h-6 text-green-500" />
-                    <h2 className="text-lg font-semibold text-gray-900">Exam Performance</h2>
+                    <TrendingUp className="w-6 h-6 text-purple-500" />
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      Monthly Activity
+                    </h2>
                   </div>
                   <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={chartData.examPerformance}>
+                    <LineChart data={chartData.monthlyActivity}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
+                      <XAxis dataKey="month" />
                       <YAxis />
                       <Tooltip />
-                      <Bar dataKey="average" fill="#10b981" />
-                    </BarChart>
+                      <Line
+                        type="monotone"
+                        dataKey="exams"
+                        stroke="#10b981"
+                        strokeWidth={2}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="assignments"
+                        stroke="#3b82f6"
+                        strokeWidth={2}
+                      />
+                    </LineChart>
                   </ResponsiveContainer>
+                  <div className="flex items-center gap-6 mt-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                      <span className="text-sm text-gray-600">Exams</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                      <span className="text-sm text-gray-600">Assignments</span>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Subject Distribution */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                  <div className="flex items-center gap-3 mb-6">
-                    <PieChart className="w-6 h-6 text-blue-500" />
-                    <h2 className="text-lg font-semibold text-gray-900">Subject Distribution</h2>
-                  </div>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <RechartsPieChart>
-                      <PieChart
-                        data={chartData.subjectDistribution}
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={80}
-                        dataKey="value"
-                      >
-                        {chartData.subjectDistribution.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </PieChart>
-                      <Tooltip />
-                    </RechartsPieChart>
-                  </ResponsiveContainer>
-                  <div className="flex flex-wrap gap-2 mt-4">
-                    {chartData.subjectDistribution.map((item, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: item.color }}
-                        ></div>
-                        <span className="text-sm text-gray-600">{item.name}</span>
+                {/* Quick Actions */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <a
+                    href="/dashboard/teacher/exams"
+                    className="block bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center">
+                        <FileText className="w-6 h-6 text-white" />
                       </div>
-                    ))}
-                  </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          Create Exam
+                        </h3>
+                        <p className="text-gray-600 text-sm">
+                          Design new exams for your students
+                        </p>
+                      </div>
+                    </div>
+                  </a>
+
+                  <a
+                    href="/dashboard/teacher/assignments"
+                    className="block bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center">
+                        <ClipboardList className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          New Assignment
+                        </h3>
+                        <p className="text-gray-600 text-sm">
+                          Create assignments for your class
+                        </p>
+                      </div>
+                    </div>
+                  </a>
+
+                  <a
+                    href="/dashboard/teacher/students"
+                    className="block bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
+                        <Users className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          Manage Students
+                        </h3>
+                        <p className="text-gray-600 text-sm">
+                          Add or remove students from your class
+                        </p>
+                      </div>
+                    </div>
+                  </a>
                 </div>
-              </div>
-
-              {/* Monthly Activity Chart */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <TrendingUp className="w-6 h-6 text-purple-500" />
-                  <h2 className="text-lg font-semibold text-gray-900">Monthly Activity</h2>
-                </div>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={chartData.monthlyActivity}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="exams" stroke="#10b981" strokeWidth={2} />
-                    <Line type="monotone" dataKey="assignments" stroke="#3b82f6" strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
-                <div className="flex items-center gap-6 mt-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-gray-600">Exams</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                    <span className="text-sm text-gray-600">Assignments</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Quick Actions */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <a
-                  href="/dashboard/teacher/exams"
-                  className="block bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center">
-                      <FileText className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">Create Exam</h3>
-                      <p className="text-gray-600 text-sm">Design new exams for your students</p>
-                    </div>
-                  </div>
-                </a>
-
-                <a
-                  href="/dashboard/teacher/assignments"
-                  className="block bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center">
-                      <ClipboardList className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">New Assignment</h3>
-                      <p className="text-gray-600 text-sm">Create assignments for your class</p>
-                    </div>
-                  </div>
-                </a>
-
-                <a
-                  href="/dashboard/teacher/students"
-                  className="block bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
-                      <Users className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">Manage Students</h3>
-                      <p className="text-gray-600 text-sm">Add or remove students from your class</p>
-                    </div>
-                  </div>
-                </a>
-              </div>
-            </main>
+              </main>
+            </div>
           </div>
-        </div>
-      )}
-    </ProtectedRoute>
+        )}
+      </ProtectedRoute>
+    </SchoolSubscriptionGuard>
   );
 }
