@@ -6,7 +6,7 @@ import Sidebar from "@/components/Sidebar";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import SchoolSubscriptionGuard from "@/components/SchoolSubscriptionGuard";
 
-export default function StudentResults({ studentEmail }) {
+export default function StudentResults() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
